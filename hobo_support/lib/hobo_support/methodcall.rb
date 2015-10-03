@@ -10,15 +10,6 @@ require 'singleton'
 require 'blankslate'
 
 module HoboSupport
-  def self.hobo_try(this, *args, &block)
-    if args.length==0
-      # Hobo style try
-      CallIfAvailable.new(this)
-    else
-      # activesupport 2.3 style try
-      this.send(:active_support_try, *args, &block)
-    end
-  end
 
   if defined? Rails
     class Railtie < Rails::Railtie
@@ -29,9 +20,6 @@ module HoboSupport
           ActiveRecord::Associations::CollectionProxy.class_eval do
             def _?()
               self
-            end
-            def try(*args, &block)
-              HoboSupport.hobo_try(self, *args, &block)
             end
           end
         end
@@ -46,12 +34,6 @@ class Object
     self
   end
 
-  alias_method :active_support_try, :try
-
-  def try(*args, &block)
-    HoboSupport.hobo_try(self, *args, &block)
-  end
-
 end
 
 
@@ -59,18 +41,6 @@ class NilClass
   def _?()
     SafeNil.instance
   end
-
-
-  def try(*args)
-    if args.length==0
-      # Hobo style try
-      CallIfAvailable.new(self)
-    else
-      # activesupport 2.3 style try
-      nil
-    end
-  end
-
 end
 
 
@@ -118,19 +88,12 @@ module ActiveRecord
   module Associations
     class AssociationProxy
 
-      # we need to make sure we don't trigger AssociationCollections' method_missing
-      def try(*args, &block)
-        HoboSupport.hobo_try(self, *args, &block)
-      end
     end
   end
 
   module NamedScope
     class Scope
       # we need to make sure we don't trigger AssociationCollections' method_missing
-      def try(*args, &block)
-        HoboSupport.hobo_try(self, *args, &block)
-      end
     end
   end
 
